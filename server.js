@@ -111,7 +111,22 @@ function getLocalIP() {
   return "127.0.0.1";
 }
 
-function startServer(port) {
+function findPort(start, cb) {
+  const s = http.createServer();
+  s.listen(start, "0.0.0.0", () => {
+    const port = s.address().port;
+    s.close(() => cb(port));
+  });
+  s.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      s.close(() => findPort(start + 1, cb));
+    } else {
+      console.error(`[!] Server error: ${err.message}`);
+    }
+  });
+}
+
+findPort(PORT, (port) => {
   server.listen(port, "0.0.0.0", () => {
     const ip = getLocalIP();
     console.log(`[*] Web server running at http://0.0.0.0:${port}`);
@@ -123,17 +138,6 @@ function startServer(port) {
     );
   });
   server.on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.log(`[*] Port ${port} in use, trying ${port + 1}...`);
-      startServer(port + 1);
-    } else {
-      console.error(`[!] Server error: ${err.message}`);
-      require("fs").writeFileSync(
-        path.join(__dirname, "server-status.txt"),
-        `ERROR:${err.message}`
-      );
-    }
+    console.error(`[!] Server error: ${err.message}`);
   });
-}
-
-startServer(PORT);
+});
