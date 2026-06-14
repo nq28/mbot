@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BotControl 2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #007aff;
+  --accent-rgb: 0, 122, 255;
+  --bg: #0a0a0f;
+  --surface: rgba(255,255,255,0.06);
+  --surface2: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.08);
+  --text: #ffffff;
+  --text2: rgba(255,255,255,0.5);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --glass: rgba(255,255,255,0.04);
+  --glass-edge: rgba(255,255,255,0.06);
+  --font: 'Inter', -apple-system, system-ui, sans-serif;
+  --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="rose"] { --accent: #ff2d55; --accent-rgb: 255, 45, 85; }
+[data-theme="purple"] { --accent: #af52de; --accent-rgb: 175, 82, 222; }
+[data-theme="green"] { --accent: #30d158; --accent-rgb: 48, 209, 88; }
+[data-theme="orange"] { --accent: #ff9f0a; --accent-rgb: 255, 159, 10; }
+[data-theme="teal"] { --accent: #64d2ff; --accent-rgb: 100, 210, 255; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Animated background */
+.bg-glow {
+  position: fixed;
+  top: -30%;
+  left: -20%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb),0.15) 0%, transparent 70%);
+  pointer-events: none;
+  transition: var(--transition);
+  z-index: 0;
+}
+.bg-glow-2 {
+  position: fixed;
+  bottom: -20%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb),0.08) 0%, transparent 70%);
+  pointer-events: none;
+  transition: var(--transition);
+  z-index: 0;
+}
+
+/* Header */
+header {
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(40px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.4);
+  background: var(--glass);
+  border-bottom: 1px solid var(--glass-edge);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+header h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--text), rgba(var(--accent-rgb),0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--surface2);
+  color: var(--text2);
+  border: 0.5px solid var(--border);
+}
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+/* Theme selector */
+.theme-group {
+  display: flex;
+  gap: 5px;
+  background: var(--surface);
+  padding: 4px 6px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border);
+}
+.theme-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.theme-dot:hover { transform: scale(1.15); }
+.theme-dot.active { border-color: var(--text); box-shadow: 0 0 12px rgba(var(--accent-rgb),0.3); }
+.theme-dot[data-t="blue"] { background: #007aff; }
+.theme-dot[data-t="rose"] { background: #ff2d55; }
+.theme-dot[data-t="purple"] { background: #af52de; }
+.theme-dot[data-t="green"] { background: #30d158; }
+.theme-dot[data-t="orange"] { background: #ff9f0a; }
+.theme-dot[data-t="teal"] { background: #64d2ff; }
+
+/* Layout */
+.container {
+  display: flex;
+  height: calc(100vh - 56px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 320px;
+  min-width: 320px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+.glass-card {
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid var(--glass-edge);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: var(--transition);
+}
+.glass-card:hover {
+  background: var(--surface2);
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.form-row {
+  margin-bottom: 10px;
+}
+.form-row:last-child { margin-bottom: 0; }
+.form-row label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+
+.input-base {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition);
+}
+.input-base:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.15);
+}
+.input-base::placeholder { color: var(--text2); }
+
+.input-group { display: flex; gap: 8px; }
+.input-group .input-base { flex: 1; }
+
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.2px;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { box-shadow: 0 4px 20px rgba(var(--accent-rgb),0.35); }
+
+.btn-danger {
+  background: rgba(255, 69, 58, 0.2);
+  color: #ff453a;
+  border: 0.5px solid rgba(255, 69, 58, 0.2);
+}
+.btn-danger:hover { background: rgba(255, 69, 58, 0.3); }
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--text2);
+  border: 0.5px solid var(--border);
+}
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+.btn-sm { padding: 6px 12px; font-size: 11px; border-radius: var(--radius-xs); }
+.btn-xs { padding: 3px 8px; font-size: 10px; border-radius: 4px; }
+.btn-icon { padding: 6px; min-width: 30px; display: inline-flex; align-items: center; justify-content: center; }
+
+/* Bot list */
+.bot-list { display: flex; flex-direction: column; gap: 6px; }
+.bot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.03);
+  border: 0.5px solid transparent;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.bot-item:hover { background: rgba(255,255,255,0.06); border-color: var(--border); }
+.bot-item.active { border-color: var(--accent); background: rgba(var(--accent-rgb),0.08); }
+.bot-item-left { display: flex; align-items: center; gap: 10px; }
+.bot-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.bot-dot.online { background: #30d158; box-shadow: 0 0 8px rgba(48,209,88,0.5); }
+.bot-dot.connecting { background: #ff9f0a; box-shadow: 0 0 8px rgba(255,159,10,0.3); animation: pulse 1.5s infinite; }
+.bot-dot.idle { background: rgba(255,255,255,0.2); }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.bot-name { font-size: 13px; font-weight: 600; }
+.bot-status { font-size: 10px; color: var(--text2); }
+.bot-server { font-size: 10px; color: var(--text2); font-family: 'SF Mono', monospace; margin-top: 1px; }
+.bot-actions { display: flex; gap: 4px; }
+
+/* Main area */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border);
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text2);
+}
+.panel-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chat-messages {
+  flex: 1;
+  padding: 12px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+.msg {
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  line-height: 1.5;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+.msg .sender { font-weight: 600; margin-right: 6px; }
+.msg .sender.you { color: #64d2ff; }
+.msg .sender.server { color: rgba(255,255,255,0.4); }
+.msg .sender.bot { color: #30d158; }
+.msg .text { color: var(--text); }
+.msg.server .text { color: rgba(255,255,255,0.55); }
+
+.chat-input-area {
+  display: flex;
+  padding: 10px 16px;
+  gap: 8px;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--border);
+}
+.chat-input-area input { flex: 1; }
+
+/* Console */
+.console-area {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  border-top: 0.5px solid var(--border);
+}
+.console-log {
+  flex: 1;
+  padding: 8px 12px;
+  overflow-y: auto;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  background: rgba(0,0,0,0.3);
+}
+.console-log::-webkit-scrollbar { width: 3px; }
+.console-log::-webkit-scrollbar-track { background: transparent; }
+.console-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.clog { white-space: pre-wrap; word-break: break-all; }
+.clog.success { color: #30d158; }
+.clog.info { color: #64d2ff; }
+.clog.warn { color: #ff9f0a; }
+.clog.error { color: #ff453a; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text2);
+  gap: 8px;
+}
+.empty-state svg { opacity: 0.3; }
+.empty-state p { font-size: 13px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { width: 100%; min-width: 100%; border-right: none; border-bottom: 1px solid var(--border); height: auto; max-height: 40vh; }
+  .container { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="bg-glow" id="bgGlow"></div>
+<div class="bg-glow-2" id="bgGlow2"></div>
+
+<header>
+  <div class="header-left">
+    <h1>BotControl</h1>
+    <span class="header-badge">v2.0</span>
+  </div>
+  <div class="header-right">
+    <div class="theme-group" id="themeGroup">
+      <span class="theme-dot active" data-t="blue" onclick="setTheme('blue')"></span>
+      <span class="theme-dot" data-t="rose" onclick="setTheme('rose')"></span>
+      <span class="theme-dot" data-t="purple" onclick="setTheme('purple')"></span>
+      <span class="theme-dot" data-t="green" onclick="setTheme('green')"></span>
+      <span class="theme-dot" data-t="orange" onclick="setTheme('orange')"></span>
+      <span class="theme-dot" data-t="teal" onclick="setTheme('teal')"></span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="sidebar">
+    <div class="glass-card">
+      <div class="section-title">Create Bot</div>
+      <div class="form-row">
+        <label>Bot Name</label>
+        <div class="input-group">
+          <input type="text" class="input-base" id="botNameInput" placeholder="MyBot" onkeydown="if(event.key==='Enter') createBot()">
+          <button class="btn btn-primary btn-sm" onclick="createBot()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card" style="flex:1;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-title" style="margin:0;">Bots</div>
+        <span class="panel-badge" id="botCount">0</span>
+      </div>
+      <div class="bot-list" id="botList">
+        <div class="empty-state" style="padding:20px 0;">
+          <p>No bots yet</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="section-title">Quick Actions</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-ghost" onclick="const s=document.querySelector('.bot-item.active');if(s)joinDialog(s.dataset.name)">Join</button>
+        <button class="btn btn-sm btn-ghost" onclick="const s=document.querySelector('.bot-item.active');if(s)leaveBot(s.dataset.name)">Leave</button>
+        <button class="btn btn-sm btn-ghost" onclick="const s=document.querySelector('.bot-item.active');if(s)deleteBot(s.dataset.name)">Delete</button>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="section-title">Discord Bot</div>
+      <div class="form-row">
+        <label>Bot Token</label>
+        <input type="password" class="input-base" id="discordToken" placeholder="MTE4ND...">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <span id="discordDot" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0;"></span>
+        <span id="discordStatus" style="font-size:12px;color:var(--text2);flex:1;">Disconnected</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="btn btn-sm btn-primary" id="discordConnectBtn" onclick="discordConnect()" style="flex:1;">Connect</button>
+        <button class="btn btn-sm btn-danger" id="discordDisconnectBtn" onclick="discordDisconnect()" style="flex:1;display:none;">Disconnect</button>
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-top:8px;line-height:1.4;">
+        Commands: <code>/creatembot</code> <code>/mjoin</code> <code>/mleave</code> <code>/console</code> <code>/mbots</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="chat-area">
+      <div class="panel-header">
+        <span class="panel-title">Chat</span>
+        <span class="panel-badge" id="chatBotLabel">No bot selected</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="empty-state">
+          <p>Select a bot and join a server to start chatting</p>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" class="input-base" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+    <div class="console-area">
+      <div class="panel-header">
+        <span class="panel-title">Console</span>
+        <button class="btn btn-xs btn-ghost" onclick="document.getElementById('consoleLog').innerHTML=''">Clear</button>
+      </div>
+      <div class="console-log" id="consoleLog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Join Dialog -->
+<div id="joinOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;">
+  <div class="glass-card" style="width:340px;padding:24px;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Join Server</div>
+    <input type="hidden" id="joinBotName">
+    <div class="form-row">
+      <label>Server Address</label>
+      <input type="text" class="input-base" id="joinAddress" placeholder="mc.example.com:25565" value="localhost:25565">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="confirmJoin()">Join</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeJoin()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let selectedBot = null;
+let bots = {};
+
+// Theme
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === t));
+  localStorage.setItem('botcontrol-theme', t);
+}
+const saved = localStorage.getItem('botcontrol-theme');
+if (saved) setTheme(saved);
+
+// Socket events
+socket.on('bots_update', (data) => {
+  bots = data;
+  renderBots();
+});
+
+socket.on('log', (msg) => {
+  addLog(msg);
+});
+
+socket.on('chat', (data) => {
+  addChat(data.bot || 'server', data.text, data.type || 'server');
+});
+
+socket.on('discord_status', (data) => {
+  const dot = document.getElementById('discordDot');
+  const status = document.getElementById('discordStatus');
+  const connectBtn = document.getElementById('discordConnectBtn');
+  const disconnectBtn = document.getElementById('discordDisconnectBtn');
+  if (data.connected) {
+    dot.style.background = '#30d158';
+    dot.style.boxShadow = '0 0 8px rgba(48,209,88,0.5)';
+    status.textContent = 'Connected';
+    status.style.color = '#30d158';
+    connectBtn.style.display = 'none';
+    disconnectBtn.style.display = 'block';
+  } else {
+    dot.style.background = 'rgba(255,255,255,0.2)';
+    dot.style.boxShadow = 'none';
+    status.textContent = 'Disconnected';
+    status.style.color = 'var(--text2)';
+    connectBtn.style.display = 'block';
+    disconnectBtn.style.display = 'none';
+  }
+});
+
+// Bot management
+function createBot() {
+  const name = document.getElementById('botNameInput').value.trim();
+  if (!name) return;
+  socket.emit('create_bot', name);
+  document.getElementById('botNameInput').value = '';
+}
+
+function joinDialog(name) {
+  document.getElementById('joinBotName').value = name;
+  document.getElementById('joinOverlay').style.display = 'flex';
+  document.getElementById('joinAddress').focus();
+}
+
+function closeJoin() {
+  document.getElementById('joinOverlay').style.display = 'none';
+}
+
+function confirmJoin() {
+  const name = document.getElementById('joinBotName').value;
+  const address = document.getElementById('joinAddress').value.trim();
+  if (!address) return;
+  let host = address, port = '25565';
+  if (address.includes(':')) {
+    const p = address.split(':');
+    host = p[0]; port = p[1];
+  }
+  socket.emit('join_server', { name, host, port });
+  closeJoin();
+}
+
+function leaveBot(name) {
+  socket.emit('leave_server', name);
+}
+
+function deleteBot(name) {
+  if (confirm(`Delete bot "${name}"?`)) {
+    socket.emit('delete_bot', name);
+    if (selectedBot === name) selectedBot = null;
+  }
+}
+
+function selectBot(name) {
+  selectedBot = name;
+  document.querySelectorAll('.bot-item').forEach(el => el.classList.toggle('active', el.dataset.name === name));
+  document.getElementById('chatBotLabel').textContent = name;
+  document.getElementById('chatInput').placeholder = `Chat as ${name}...`;
+  document.getElementById('chatInput').disabled = false;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || !selectedBot) return;
+  socket.emit('bot_chat', { name: selectedBot, message: msg });
+  addChat(selectedBot, msg, 'you');
+  input.value = '';
+}
+
+function discordConnect() {
+  const token = document.getElementById('discordToken').value.trim();
+  if (!token) {
+    addLog('[!] Enter a Discord bot token first', 'error');
+    return;
+  }
+  socket.emit('discord_connect', token);
+  addLog('[*] Connecting Discord bot...', 'info');
+}
+
+function discordDisconnect() {
+  socket.emit('discord_disconnect');
+  addLog('[*] Disconnecting Discord bot...', 'warn');
+}
+
+function renderBots() {
+  const list = document.getElementById('botList');
+  const names = Object.keys(bots);
+  document.getElementById('botCount').textContent = names.length;
+
+  if (names.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px 0;"><p>No bots yet</p></div>';
+    return;
+  }
+
+  list.innerHTML = names.map(name => {
+    const b = bots[name];
+    const dotClass = b.status === 'online' ? 'online' : b.status === 'connecting' ? 'connecting' : 'idle';
+    const server = b.host ? `${b.host}:${b.port}` : '—';
+    return `<div class="bot-item ${selectedBot === name ? 'active' : ''}" data-name="${name}" onclick="selectBot('${name}')">
+      <div class="bot-item-left">
+        <span class="bot-dot ${dotClass}"></span>
+        <div>
+          <div class="bot-name">${name}</div>
+          <div class="bot-status">${b.status} · ${server}</div>
+        </div>
+      </div>
+      <div class="bot-actions">
+        <button class="btn btn-xs btn-ghost btn-icon" onclick="event.stopPropagation();joinDialog('${name}')" title="Join">🔗</button>
+        <button class="btn btn-xs btn-ghost btn-icon" onclick="event.stopPropagation();leaveBot('${name}')" title="Leave">⏹</button>
+        <button class="btn btn-xs btn-danger btn-icon" onclick="event.stopPropagation();deleteBot('${name}')" title="Delete">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Chat display
+function addChat(sender, text, type) {
+  const container = document.getElementById('chatMessages');
+  const empty = container.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg';
+  if (type === 'server') div.classList.add('server');
+
+  const senderSpan = document.createElement('span');
+  senderSpan.className = 'sender';
+  if (type === 'you') senderSpan.classList.add('you');
+  else if (type === 'bot' || !type) senderSpan.classList.add('bot');
+  else senderSpan.classList.add('server');
+  senderSpan.textContent = sender === 'server' ? '' : `<${sender}>`;
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'text';
+  textSpan.textContent = text;
+
+  if (senderSpan.textContent) div.appendChild(senderSpan);
+  div.appendChild(textSpan);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Console log
+function addLog(msg) {
+  const container = document.getElementById('consoleLog');
+  const div = document.createElement('div');
+  div.className = 'clog';
+  if (msg.startsWith('[+]') || msg.startsWith('[*]')) div.classList.add('success');
+  else if (msg.startsWith('[!]')) div.classList.add('error');
+  else if (msg.startsWith('[-]')) div.classList.add('warn');
+  else div.classList.add('info');
+  div.textContent = msg;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+</script>
+</body>
+</html>
