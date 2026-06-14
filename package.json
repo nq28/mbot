@@ -4,7 +4,9 @@
   "description": "Web + Discord controlled Minecraft bot with anti-AFK, chat, and console log",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "cli": "node railway.js",
+    "console": "node railway.js"
   },
   "dependencies": {
     "discord.js": "^14.18.0",

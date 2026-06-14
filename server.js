@@ -98,14 +98,28 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.WEB_PORT || 3000;
+const PORT = process.env.PORT || process.env.WEB_PORT || 3000;
+const os = require("os");
+
+function getLocalIP() {
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === "IPv4" && !net.internal) return net.address;
+    }
+  }
+  return "127.0.0.1";
+}
 
 function startServer(port) {
   server.listen(port, "0.0.0.0", () => {
+    const ip = getLocalIP();
     console.log(`[*] Web server running at http://0.0.0.0:${port}`);
+    console.log(`[*] Local:   http://127.0.0.1:${port}`);
+    console.log(`[*] Network: http://${ip}:${port}`);
     require("fs").writeFileSync(
       path.join(__dirname, "server-status.txt"),
-      `RUNNING:${port}`
+      `RUNNING:${ip}:${port}`
     );
   });
   server.on("error", (err) => {
