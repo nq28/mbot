@@ -1,9 +1,13 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-node server.js > server.log 2>&1 &
+nohup node server.js > server.log 2>&1 &
 PID=$!
 echo "[*] BotControl started (PID: $PID)"
-sleep 2
-cat server-status.txt 2>/dev/null || echo "[*] Check 'server.log' for details"
-echo "[*] Web URL: http://$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):${PORT:-3000}"
-echo "[*] Run './status.sh' anytime to see the URL"
+sleep 3
+if [ -f server-status.txt ]; then
+  STATUS=$(cat server-status.txt)
+  IP=$(echo $STATUS | cut -d: -f2)
+  PORT=$(echo $STATUS | cut -d: -f3)
+  echo "[*] Web: http://$IP:$PORT"
+fi
+echo "[*] tail -f server.log  # view logs"
